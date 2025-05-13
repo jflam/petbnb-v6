@@ -1,14 +1,17 @@
 {
-  "name": "fortune-app",
+  "name": "petbnb",
   "private": true,
   "scripts": {
-    "dev": "npm-run-all -p dev:*",
+    "dev": "npm-run-all -p dev:client dev:server",
     "dev:client": "cd client && npm run dev",
-    "dev:api": "docker compose up --build",
+    "dev:server": "docker compose up --build",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
     "bootstrap": "bash scripts/bootstrap.sh && npm run prisma:generate",
-    "prisma:generate": "cd server && npx prisma generate"
+    "prisma:generate": "cd server && npx prisma generate",
+    "seed": "cd server && npm run seed",
+    "smoke-test": "cd server && ./scripts/smoke-tests.sh",
+    "fresh-start": "bash scripts/start.sh"
   },
   "devDependencies": {
     "concurrently": "8.2.1",

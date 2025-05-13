@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import { PetSize } from '@prisma/client';
+
+// Define PetSize enum locally
+enum PetSize {
+  XS = "XS",
+  S = "S",
+  M = "M",
+  L = "L",
+  XL = "XL"
+}
 
 // Schema for sitter search query parameters
 export const searchQuerySchema = z.object({
@@ -31,11 +39,7 @@ export const searchQuerySchema = z.object({
     .describe('Number of results per page'),
   
   petSize: z.enum([
-    PetSize.XS, 
-    PetSize.S, 
-    PetSize.M, 
-    PetSize.L, 
-    PetSize.XL
+    "XS", "S", "M", "L", "XL"
   ]).optional()
     .describe('Size of the pet'),
   

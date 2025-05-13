@@ -14,15 +14,14 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/knexfile.js ./
-COPY --from=build /app/migrations ./migrations
-COPY --from=build /app/seeds ./seeds
 
-# Copy the ts-node binary for seeding
+# Generate Prisma client with correct binary targets
+RUN npx prisma generate
 COPY --from=build /app/node_modules/.bin/ts-node ./node_modules/.bin/
 
 # Generate Prisma client
-RUN npx prisma generate
+# Expose port 
+EXPOSE 4000
 
 # Start the server
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start"]

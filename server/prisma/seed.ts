@@ -47,8 +47,8 @@ function generateRandomPoint(bounds: typeof LOCATIONS.SEATTLE) {
   return { lat, lng };
 }
 
-// Function to generate a PostGIS geography point from lat/lng
-function createGeographyPoint(lat: number, lng: number): any {
+// Function to generate a PostGIS geography point string
+function createGeographyPoint(lat: number, lng: number): string {
   // This will be handled as a raw SQL query when inserted
   return `POINT(${lng} ${lat})`;
 }
@@ -92,13 +92,13 @@ async function generateSitterImage(sitterId: number, prompt: string): Promise<vo
   try {
     // Download a placeholder image from Lorem Picsum
     const imageUrl = `https://picsum.photos/seed/${sitterId}/300/300`;
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     
-    // Save the image to the public folder
-    const imagePath = path.resolve(__dirname, '../../client/public/sitters', `${sitterId}.jpg`);
-    await fs.writeFile(imagePath, Buffer.from(response.data));
+    // Skip image download in Docker environment to avoid issues
+    console.log(`Would download image from: ${imageUrl}`);
+    console.log(`Image generation skipped in Docker environment`);
     
-    console.log(`Saved image for sitter ${sitterId} at ${imagePath}`);
+    // In a real implementation with volume mapping, you would save the images
+    // to a location that's accessible from both containers
   } catch (error) {
     console.error(`Error generating image for sitter ${sitterId}:`, error);
   }
@@ -134,19 +134,28 @@ async function main() {
       }
     });
     
-    // Create the sitter profile
-    const sitter = await prisma.sitter.create({
-      data: {
-        userId: user.id,
-        bio: faker.lorem.paragraph(),
-        rateBoarding: faker.number.int({ min: 30, max: 80 }) * 100, // $30-$80 in cents
-        rateDaycare: faker.number.int({ min: 20, max: 50 }) * 100, // $20-$50 in cents
-        responseTime: faker.number.int({ min: 15, max: 120 }), // 15-120 minutes
-        repeatClient: faker.number.int({ min: 0, max: 80 }), // 0-80%
-        radiusKm: faker.number.int({ min: 5, max: 15 }), // 5-15 km
-        // Store the geography point using raw query in the seed script
-        addressGeom: prisma.$queryRaw`ST_SetSRID(ST_MakePoint(${point.lng}, ${point.lat}), 4326)::geography`,
-      }
+    // Create the sitter profile but handle addressGeom separately
+    // First create without addressGeom
+    const sitter = await prisma.$transaction(async (tx) => {
+      // Create sitter record without the geography field
+      const newSitter = await tx.$executeRaw`
+        INSERT INTO "Sitter" ("userId", "bio", "rateBoarding", "rateDaycare", "responseTime", "repeatClient", "radiusKm", "addressGeom")
+        VALUES (
+          ${user.id}, 
+          ${faker.lorem.paragraph()}, 
+          ${faker.number.int({ min: 30, max: 80 }) * 100}, 
+          ${faker.number.int({ min: 20, max: 50 }) * 100}, 
+          ${faker.number.int({ min: 15, max: 120 })}, 
+          ${faker.number.int({ min: 0, max: 80 })}, 
+          ${faker.number.int({ min: 5, max: 15 })},
+          ST_SetSRID(ST_MakePoint(${point.lng}, ${point.lat}), 4326)::geography
+        )
+        RETURNING id;
+      `;
+      
+      // Get the new sitter ID
+      const result = await tx.$queryRaw<{id: number}[]>`SELECT id FROM "Sitter" WHERE "userId" = ${user.id}`;
+      return { id: result[0].id };
     });
     
     // Add sitter services

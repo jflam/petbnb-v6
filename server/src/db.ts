@@ -14,43 +14,11 @@ export const db = knex(knexConfig);
 
 const execPromise = promisify(exec);
 
+// This function is now deprecated as we've removed the Fortune model
 export async function getRandomFortune() {
   try {
-    // First, check if we need to create view - if we're using Knex table with Prisma
-    const count = await db.raw(`
-      SELECT COUNT(*) 
-      FROM information_schema.tables 
-      WHERE table_name = 'Fortune'
-    `);
-
-    if (parseInt(count.rows[0].count) === 0) {
-      // Check if Knex 'fortunes' table exists
-      const knexTableExists = await db.raw(`
-        SELECT COUNT(*) 
-        FROM information_schema.tables 
-        WHERE table_name = 'fortunes'
-      `);
-
-      if (parseInt(knexTableExists.rows[0].count) > 0) {
-        // Create a view that Prisma can use 
-        console.log('🔄 Creating database view "Fortune" to map to Knex table "fortunes"');
-        await db.raw(`
-          CREATE OR REPLACE VIEW "Fortune" AS
-          SELECT id, text, NOW() as created
-          FROM fortunes;
-        `);
-        console.log('✅ Database view created successfully');
-      }
-    }
-
-    // Now proceed with query
-    const dataCount = await prisma.fortune.count();
-    if (dataCount === 0) {
-      return null;
-    }
-    
-    const skip = Math.floor(Math.random() * dataCount);
-    return prisma.fortune.findFirst({ skip });
+    console.log('⚠️ getRandomFortune() is deprecated and will be removed in future versions');
+    return null;
   } catch (error) {
     console.error('Error in getRandomFortune:', error);
     throw error;
@@ -60,16 +28,8 @@ export async function getRandomFortune() {
 // Direct SQL query to insert seed data
 async function seedFortunesTable() {
   try {
-    // Seed the Knex fortunes table
-    console.log('🌱 Seeding fortunes table...');
-    await db('fortunes').insert([
-      { text: 'You will encounter a challenging opportunity that will lead to growth.' },
-      { text: 'A surprise awaits you in the near future.' },
-      { text: 'Your dedication will soon be rewarded.' },
-      { text: 'The journey is more important than the destination.' },
-      { text: 'A creative solution will present itself to a longstanding problem.' }
-    ]);
-    console.log('✅ Fortunes table seeded successfully');
+    // This function is deprecated as we've removed Fortune model
+    console.log('⚠️ seedFortunesTable() is deprecated and will be removed in future versions');
     return true;
   } catch (error) {
     console.error('Error seeding fortunes:', error);

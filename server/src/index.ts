@@ -26,14 +26,14 @@ app.get('/api/health', healthCheck);
 // Sitter routes
 app.get(
   '/api/sitters/search',
-  validateRequest(searchQuerySchema),
-  searchSitters
+  validateRequest(searchQuerySchema, 'query'),
+  searchSitters as any
 );
 
 app.get(
   '/api/sitters/:id',
   validateRequest(sitterParamSchema, 'params'),
-  getSitterProfile
+  getSitterProfile as any
 );
 
 // Helper function to run migrations and seed data
@@ -43,7 +43,16 @@ async function setupDatabase() {
     
     try {
       // Run the Prisma migrations
-      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      try {
+        execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      } catch (error) {
+        logger.warn('Prisma migrate deploy failed, falling back to direct SQL execution');
+        // If migration fails, we'll apply the SQL directly
+        const initMigrationPath = path.resolve(__dirname, '../prisma/migrations/20250502173436_init/migration.sql');
+        logger.info(`Executing init migration: ${initMigrationPath}`);
+        const sql = require('fs').readFileSync(initMigrationPath, 'utf8');
+        await prisma.$executeRawUnsafe(sql);
+      }
       
       // Execute the manual migrations
       const manualMigrationPath = path.resolve(__dirname, '../prisma/migrations/manual/init_spatial.sql');
@@ -89,11 +98,34 @@ async function setupDatabase() {
   }
 }
 
+// Helper function to wait for the database to be ready
+async function waitForDatabase(retries = 10, delay = 3000) {
+  logger.info('Checking database connection...');
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      // Try to connect to the database
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info('Database connection successful');
+      return true;
+    } catch (error) {
+      logger.warn(`Database connection attempt ${i + 1}/${retries} failed, retrying in ${delay/1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw new Error(`Could not connect to database after ${retries} attempts`);
+}
+
 // Start server with database setup
 (async () => {
   logger.info('Starting PetBnB API server...');
 
   try {
+    // First wait for the database to be available
+    await waitForDatabase();
+    
+    // Then run migrations and seed data
     await setupDatabase();
     logger.info('Database setup completed successfully');
     

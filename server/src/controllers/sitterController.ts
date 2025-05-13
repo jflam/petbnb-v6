@@ -75,13 +75,18 @@ export async function searchSitters(req: Request<{}, {}, {}, SearchQueryParams>,
       params: { lat, lng, start, end, page, pageSize, petSize, needs, sort }
     }, 'Searching for sitters');
 
+    // Make sure these are proper types
+    const startDate = start instanceof Date ? start : new Date(start as string);
+    const endDate = end instanceof Date ? end : new Date(end as string);
+    const pageNum = typeof page === 'number' ? page : parseInt(page as string, 10);
+    const pageSizeNum = typeof pageSize === 'number' ? pageSize : parseInt(pageSize as string, 10);
+
     // Calculate the number of days between start and end dates
-    const numDays = daysBetween(start, end);
-    const offset = (page - 1) * pageSize;
+    const numDays = daysBetween(startDate, endDate);
+    const offset = (pageNum - 1) * pageSizeNum;
 
     // Build a date array for availability check
     const dateRange = [];
-    const startDate = new Date(start);
     for (let i = 0; i < numDays; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
@@ -122,7 +127,7 @@ export async function searchSitters(req: Request<{}, {}, {}, SearchQueryParams>,
           )` : 
           prisma.$queryRaw`AND 1=1`
         }
-        ${needs && needs.length > 0 ?
+        ${needs && Array.isArray(needs) && needs.length > 0 ?
           prisma.$queryRaw`AND EXISTS (
             -- Simplified for MVP. In a real app, we'd check for specific capabilities
             SELECT 1 FROM "SitterService" ss
@@ -195,7 +200,7 @@ export async function searchSitters(req: Request<{}, {}, {}, SearchQueryParams>,
     `;
     
     const count = parseInt((totalResults as any[])[0].count);
-    const totalPages = Math.ceil(count / pageSize);
+    const totalPages = Math.ceil(count / pageSizeNum);
 
     // Format the sitter results
     const formattedResults = enrichedSitters.map(sitter => 
@@ -216,8 +221,8 @@ export async function searchSitters(req: Request<{}, {}, {}, SearchQueryParams>,
       geojson: toGeoJSON(formattedResults),
       total: count,
       paging: {
-        page,
-        pageSize,
+        page: pageNum,
+        pageSize: pageSizeNum,
         totalPages
       },
       bbox
@@ -338,11 +343,11 @@ export async function getSitterProfile(req: Request<SitterParams>, res: Response
         average: parseFloat((rating as any[])[0].avgRating),
         count: parseInt((rating as any[])[0].reviewCount)
       },
-      services: sitter.services.map(service => ({
+      services: sitter.services.map((service: any) => ({
         type: service.service,
         priceDollars: service.priceCents / 100
       })),
-      reviews: sitter.reviews.map(review => ({
+      reviews: sitter.reviews.map((review: any) => ({
         id: review.id,
         rating: review.rating,
         comment: review.comment,
@@ -352,7 +357,7 @@ export async function getSitterProfile(req: Request<SitterParams>, res: Response
           name: review.owner.email.split('@')[0]
         }
       })),
-      availability: availability.map(a => a.date.toISOString().split('T')[0])
+      availability: availability.map((a: any) => a.date.toISOString().split('T')[0])
     };
 
     res.json(formattedResponse);

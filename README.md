@@ -32,7 +32,7 @@ Now open:
 
 * **SPA** → [http://localhost:5173](http://localhost:5173)
 * **API** → [http://localhost:4000](http://localhost:4000)
-* **DB**  → `localhost:5433`
+* **DB**  → `localhost:5432`
 
 ---
 
@@ -95,13 +95,32 @@ petbnb-v6/
 
 Edit code → save → browser refreshes automatically.
 
+### Available Scripts
+
+```bash
+# Setup and installation
+npm run bootstrap   # Install dependencies and generate Prisma client
+
+# Development
+npm run dev         # Start both client and server in development mode
+npm run client      # Start only the client
+npm run server      # Start only the server
+npm run fresh-start # Clean start (removes all containers & volumes first)
+
+# Database
+npm run seed        # Run the database seed script
+npm run prisma:generate  # Generate Prisma client
+
+# Testing
+npm run smoke-test  # Run API smoke tests
+```
+
 ### Running Seed Scripts
 
 The seed script generates demo data including sitter profiles, pets, reviews, and mock images:
 
 ```bash
 # From the project root
-cd server
 npm run seed
 ```
 
@@ -117,8 +136,7 @@ To verify the API is working correctly:
 
 ```bash
 # From the project root
-cd server
-./scripts/smoke-tests.sh
+npm run smoke-test
 ```
 
 The smoke tests verify:
@@ -129,6 +147,7 @@ The smoke tests verify:
 For testing against a deployed environment:
 
 ```bash
+cd server
 ./scripts/smoke-tests.sh https://your-deployed-api-url
 ```
 
@@ -184,6 +203,8 @@ DATABASE_URL="<url>" npx prisma db seed
 * **Missing sitter images?** Run the seed script again
 * **Search returns no results?** Check the search coordinates are near Seattle (47.6097, -122.3331) or Austin (30.2672, -97.7431)
 * **PostGIS errors?** Make sure PostgreSQL has the PostGIS extension installed
+* **Docker container issues?** Use `npm run fresh-start` to completely clean up and start fresh
+* **Prisma migration errors?** Use `npm run fresh-start` to reset the database and containers
 
 ---
 
