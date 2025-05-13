@@ -1,47 +1,52 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import SearchPage from './pages/SearchPage';
+import SitterProfilePage from './pages/SitterProfilePage';
+import './App.css';
 
-interface Fortune {
-  id: number;
-  text: string;
-}
+// Create a theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#4CAF50',
+    },
+    secondary: {
+      main: '#FF9800',
+    },
+    background: {
+      default: '#F5F5F5',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+});
 
-// Get API base URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// Create a React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 export default function App() {
-  const [fortune, setFortune] = useState<Fortune | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchFortune = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/fortunes/random`);
-      if (!res.ok) throw new Error('Failed to load fortune');
-      setFortune(await res.json());
-    } catch (e: any) {
-      setError(e.message);
-      console.error('Error fetching fortune:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFortune();
-  }, []);
-
   return (
-    <div className="app-container">
-      <div className="card">
-        {loading && <p>Loading…</p>}
-        {error && <p className="error">Error: {error}</p>}
-        {fortune && <p>{fortune.text}</p>}
-      </div>
-      <button className="btn" onClick={fetchFortune} disabled={loading}>
-        moar fortunes
-      </button>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/sitter/:id" element={<SitterProfilePage />} />
+            <Route path="*" element={<Navigate to="/search" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

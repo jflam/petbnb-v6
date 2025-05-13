@@ -1,136 +1,164 @@
-# Full-Stack AI Starter App (React • Express • PostgreSQL • Azure)
+# PetBnB - Sitter Discovery App (React • Express • PostgreSQL • PostGIS • Azure)
 
-A batteries-included reference app that proves a **React/Vite SPA, an Express + Prisma API, and a PostgreSQL database** can run locally in Docker and go live on Azure with a single `azd up`.
+A full-featured pet sitter discovery platform built with a modern stack:
 
-Out of the box you get a playful “fortune-cookie” feature—click once and the front-end calls the API, which fetches a random fortune from Postgres. Swap that model for your own data and you instantly have:
+* **Backend**: Node.js with Express, Prisma ORM, and PostgreSQL with PostGIS extensions for spatial queries
+* **Frontend**: React SPA with Material-UI, React Router, React Query, and MapLibre GL for interactive maps
 
-* Hot-reload local development (Vite + Nodemon + Docker Compose)  
-* One-command cloud deployment to Azure Container Apps, Static Web Apps, and PostgreSQL Flexible Server  
-* IaC in Bicep, secret management via Key Vault, and a ready-made GitHub Actions pipeline
-
-Fork it, rename it, and start shipping real features instead of scaffolding infrastructure.
+The app allows pet owners to search for pet sitters by location, filter by various criteria, and view detailed profiles.
 
 ---
 
-## 1 • What’s Inside?
+## 1 • What's Inside?
 
-* **Backend** – Node 20 · Express · Prisma · PostgreSQL. One endpoint: `/api/fortunes/random`.
-* **Frontend** – React + Vite SPA that pipes the fortune onto the screen.
-* **Docker‑first dev** – PostgreSQL and API run in containers so “it works on my machine” means “it works everywhere.”
-* **Azure‑native deploy** – Azure Developer CLI (azd), Bicep IaC, Container Apps, Static Web Apps, PostgreSQL Flexible Server.
-
-Everything lives in a monorepo with clear boundaries (`/server`, `/client`, `/infra`, `/scripts`).
+* **Data Model** – Users, Sitters, Pets, Reviews, Availability, and more with complete relational integrity
+* **Spatial Search** – Location-based sitter discovery with distance filtering using PostGIS
+* **UI Components** – Search bar, filter drawer, list/map toggle, sitter cards, and responsive design
+* **API Design** – REST endpoints for sitter search and profile retrieval with validation
+* **DevOps** – Docker Compose for local development, Bicep IaC for Azure deployment
 
 ---
 
-## 2 • Quick Start (Local)
+## 2 • Quick Start (Local)
 
 ```bash
-git clone https://github.com/<you>/ai-app-starter-postgres.git
-cd ai-app-starter-postgres
+git clone https://github.com/<you>/petbnb-v6.git
+cd petbnb-v6
 npm run bootstrap   # install deps & generate Prisma client
 npm run dev         # spins up DB + API (Docker) & Vite dev server
 ```
 
 Now open:
 
-* **SPA** → [http://localhost:3000](http://localhost:3000)
-* **API** → [http://localhost:4001](http://localhost:4001)
-* **DB**  → `localhost:5433`
+* **SPA** → [http://localhost:5173](http://localhost:5173)
+* **API** → [http://localhost:4000](http://localhost:4000)
+* **DB**  → `localhost:5433`
 
 ---
 
-## 3 • Prerequisites
+## 3 • Prerequisites
 
-* **Node 20 LTS** (includes npm)
-* **Docker Desktop 24+**
-* **Azure CLI** & **Azure Developer CLI (azd)** – required only for cloud deployment
-* **uv** – Python package runner (used by helper scripts)
+* **Node 20 LTS** (includes npm)
+* **Docker Desktop 24+**
+* **Azure CLI** & **Azure Developer CLI (azd)** – required only for cloud deployment
 
 Verify:
 
 ```bash
 node -v   # v20.x
-docker --version   # Docker 24.x
-az --version       # azure‑cli ≥ 2.61
-azd version        # e.g. 1.5.0
-uv --version       # e.g. 0.1.x
+docker --version   # Docker 24.x
+az --version       # azure‑cli ≥ 2.61
+azd version        # e.g. 1.5.0
 ```
-
-> Need Node? Install via `nvm install 20 && nvm use 20` (macOS/Linux) or grab the installer for Windows.
 
 ---
 
-## 4 • Project Layout
+## 4 • Project Layout
 
 ```
-ai-app-starter-postgres/
+petbnb-v6/
 │
-├── client/        # React/Vite SPA
-├── server/        # Express API + Prisma + Dockerfile
-├── infra/         # Bicep IaC + azure.yaml + config
-├── scripts/       # helper Python + shell scripts
-└── package.json   # workspace root scripts
+├── client/           # React/Vite SPA
+│   ├── src/          # Frontend source code
+│   │   ├── components/    # UI components
+│   │   ├── pages/         # Page components
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── store/         # Zustand state management
+│   │   ├── api/           # API client
+│   │   └── types/         # TypeScript type definitions
+│   └── public/       # Static assets
+│
+├── server/           # Express API + Prisma + Dockerfile
+│   ├── src/          # Backend source code
+│   │   ├── controllers/   # API route handlers
+│   │   ├── middleware/    # Express middleware
+│   │   └── utils/         # Helper utilities
+│   ├── prisma/       # Prisma schema and migrations
+│   └── scripts/      # Utility scripts
+│
+├── infra/            # Bicep IaC + azure.yaml + config
+├── docs/             # Documentation
+└── package.json      # workspace root scripts
 ```
-
-Each service is self‑contained: its own `package.json`, env file, and build process. The root uses npm workspaces so `npm run <script>` cascades where appropriate.
 
 ---
 
 ## 5 • Local Development Workflow
 
-> Everything in this section runs **only on your machine**—no Azure resources are involved.
-
-### Local Dev Server (HMR)
+### Local Dev Server
 
 1. `npm run bootstrap` – one-time install & Prisma client generation  
-2. `npm run dev` – starts **all** services locally:  
-   * PostgreSQL 16 (Docker)  
+2. `npm run dev` – starts all services locally:  
+   * PostgreSQL 16 with PostGIS extensions (Docker)  
    * Express API with hot-reload (Docker)  
-   * Vite dev server with HMR (port 3000)
+   * Vite dev server with HMR (port 5173)
 
 Edit code → save → browser refreshes automatically.
 
-### Local Production Build & Preview
+### Running Seed Scripts
+
+The seed script generates demo data including sitter profiles, pets, reviews, and mock images:
 
 ```bash
-npm run build      # compiles server & client for production
-npm run start:prod # serves the built API (Docker) + previews the SPA
+# From the project root
+cd server
+npm run seed
+```
+
+The seed script will:
+1. Create 10 sitter profiles (5 in Seattle, 5 in Austin)
+2. Create 10 pet owners with 25 pets of varied sizes and needs
+3. Generate 200 random reviews
+4. Create mock profile images for each sitter (saved in `client/public/sitters/`)
+
+### Running Smoke Tests
+
+To verify the API is working correctly:
+
+```bash
+# From the project root
+cd server
+./scripts/smoke-tests.sh
+```
+
+The smoke tests verify:
+1. API health endpoint is responding
+2. Sitter search is returning results
+3. Sitter profile endpoint is returning detailed data
+
+For testing against a deployed environment:
+
+```bash
+./scripts/smoke-tests.sh https://your-deployed-api-url
+```
 
 ---
 
-## 6 • Deploy to Azure in One Command
+## 6 • Deploy to Azure
 
 > All cloud resources are defined in Bicep and orchestrated by `azd`. You *do not* need to click around the Portal.
 
-\### Step 1 – Prep Azure
+### Step 1 – Prep Azure
 
 ```bash
 az login                        # browser sign‑in
 az account set --subscription <SUB_ID>
-azd init                       # choose env name + region
+azd init                        # choose env name + region
 azd env set POSTGRES_ADMIN_PASSWORD "$(openssl rand -base64 24)"
 ```
 
-\### Step 2 – Quota Check (Optional but Smart)
+### Step 2 – Ship it
 
 ```bash
-uv run scripts/check_azure_quota.py   # prints regions with capacity
-source ./set_region.sh                # exports AZURE_LOCATION
+azd up        # provisions RG, Container Apps, Static Web App, Postgres… then deploys code
 ```
 
-\### Step 3 – Ship it
+A few minutes later you'll get URLs like:
 
-```bash
-azd up        # provisions RG, ACR, Container Apps, Static Web App, Postgres… then deploys code
-```
+* `https://<static>.azurestaticapps.net`  (SPA)
+* `https://server.<hash>.<region>.azurecontainerapps.io`  (API)
 
-A few minutes later you’ll get URLs like:
-
-* `https://<static>.azurestaticapps.net`  (SPA)
-* `https://server.<hash>.<region>.azurecontainerapps.io`  (API)
-
-\### Step 4 – Migrate & Seed
+### Step 3 – Migrate & Seed
 
 ```bash
 azd show                          # grab DATABASE_URL secret
@@ -139,49 +167,24 @@ DATABASE_URL="<url>" npx prisma migrate deploy
 DATABASE_URL="<url>" npx prisma db seed
 ```
 
-That’s it—production ready.
+---
+
+## 7 • Environment Variables
+
+* `DATABASE_URL` – PostgreSQL connection string for Prisma
+* `PORT` – API port (default 4000)
+* `VITE_API_BASE_URL` – API URL for the frontend (default: http://localhost:4000)
+* `APPINSIGHTS_CONNECTION_STRING` – Optional Azure App Insights connection string for telemetry
 
 ---
 
-## 7 • CI/CD with GitHub Actions
+## 8 • Troubleshooting
 
-Run:
-
-```bash
-azd pipeline config
-```
-
-The wizard creates a service principal, injects credentials as repo secrets, and writes `.github/workflows/azure-dev.yml`. Every push to `main` redeploys to your chosen environment. Add branch filters or approvals as you wish.
+* **Build fails?** Re‑run `npm run bootstrap`
+* **Missing sitter images?** Run the seed script again
+* **Search returns no results?** Check the search coordinates are near Seattle (47.6097, -122.3331) or Austin (30.2672, -97.7431)
+* **PostGIS errors?** Make sure PostgreSQL has the PostGIS extension installed
 
 ---
 
-## 8 • Environment Variables Cheat‑Sheet
-
-* `DATABASE_URL` – injected into the Container App as a secret.
-* `PORT` – API port (default 4000).
-* `VITE_API_BASE_URL` – baked into the SPA at build time. **Public, non‑secret.**
-
-Remember: only values prefixed with `VITE_` end up in client‑side JS.
-
----
-
-## 9 • Troubleshooting 101
-
-* **Build fails?** Re‑run `npm run bootstrap`.
-* **Container App 502?** `az containerapp logs show --name server -g <rg> --follow`.
-* **CORS issues?** Set `VITE_API_BASE_URL` on the Static Web App.
-* **Quota errors?** Re‑run the quota script or request increases in the Portal.
-
-Run `azd down` to delete the entire environment when finished.
-
----
-
-## 10 • Security Notes
-
-* Secrets live in Azure Key Vault and Container App secrets—never in Git.
-* The API pulls images from ACR using a user‑assigned managed identity with *AcrPull* role least privilege.
-* CSP headers in `staticwebapp.config.json` restrict outbound hosts.
-
----
-
-### Happy shipping! 🎉
+### Happy pet sitting! 🐶 🐱

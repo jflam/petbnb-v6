@@ -1,14 +1,102 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [postgis]
 }
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
-model Fortune {
-  id      Int      @id @default(autoincrement())
-  text    String
-  created DateTime @default(now())
+enum UserRole {
+  owner
+  sitter
+}
+
+enum PetType {
+  dog
+  cat
+}
+
+enum PetSize {
+  XS
+  S
+  M
+  L
+  XL
+}
+
+enum Service {
+  boarding
+  daycare
+  walking
+  house_sitting
+  drop_in
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  role         UserRole
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  sitter       Sitter?
+  pets         Pet[]
+  reviewsGiven Review[] @relation("owner")
+}
+
+model Sitter {
+  id             Int             @id @default(autoincrement())
+  user           User            @relation(fields: [userId], references: [id])
+  userId         Int             @unique
+  bio            String?
+  rateBoarding   Int?
+  rateDaycare    Int?
+  responseTime   Int?
+  repeatClient   Int?
+  radiusKm       Int             @default(8)
+  addressGeom    Unsupported("geography(Point,4326)")
+  reviews        Review[]        @relation("sitter")
+  availability   Availability[]
+  services       SitterService[]
+}
+
+model SitterService {
+  sitter     Sitter   @relation(fields: [sitterId], references: [id])
+  sitterId   Int
+  service    Service
+  priceCents Int
+
+  @@id([sitterId, service])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  sitter    Sitter   @relation("sitter", fields: [sitterId], references: [id])
+  sitterId  Int
+  owner     User     @relation("owner", fields: [ownerId], references: [id])
+  ownerId   Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Pet {
+  id          Int      @id @default(autoincrement())
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  name        String
+  type        PetType
+  size        PetSize
+  specialNeeds Json?
+}
+
+model Availability {
+  sitter      Sitter   @relation(fields: [sitterId], references: [id])
+  sitterId    Int
+  date        DateTime @db.Date
+  isAvailable Boolean  @default(true)
+
+  @@id([sitterId, date])
 }
