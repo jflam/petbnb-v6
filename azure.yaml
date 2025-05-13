@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/alpha/azure.yaml.json
+
+name: ai-app-starter-postgres
+metadata:
+    template: azd-init@1.15.1
+services:
+    client:
+        project: client
+        host: staticwebapp
+        language: js
+        dist: dist
+    server:
+        project: server
+        host: containerapp
+        language: ts
+resources:
+    client:
+        type: host.staticwebapp 
+    server:
+        type: host.containerapp
+        port: 4000
+    aistarterapppostgresdb:
+        type: db.postgres

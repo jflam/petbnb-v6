@@ -1,0 +1,52 @@
+{
+  "required_services": {
+    "postgresql": {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "sku": {
+        "name": "Standard_B2s",
+        "tier": "Burstable"
+      },
+      "version": "16",
+      "storage_gb": 32,
+      "min_vcores": 2
+    },
+    "container_registry": {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "sku": {
+        "name": "Basic"
+      }
+    },
+    "container_apps": {
+      "type": "Microsoft.App/managedEnvironments",
+      "resources": {
+        "cpu": 0.5,
+        "memory": "1Gi"
+      }
+    },
+    "static_web_app": {
+      "type": "Microsoft.Web/staticSites",
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      }
+    }
+  },
+  "database": {
+    "name": "ai_app",
+    "admin_user": "postgresql_user",
+    "charset": "UTF8",
+    "collation": "en_US.UTF8"
+  },
+  "allowed_regions": [
+    "westus2",
+    "centralus",
+    "eastus2"
+  ],
+  "deployment": {
+    "resource_group_prefix": "rg-ai-app",
+    "tags": {
+      "environment": "production",
+      "project": "ai-starter-postgres"
+    }
+  }
+}
